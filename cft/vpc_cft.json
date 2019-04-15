@@ -1,0 +1,211 @@
+{
+	"Resources": {
+		"lNikVpc": {
+			"Type": "AWS::EC2::VPC",
+			"Properties": {
+				"CidrBlock": "10.0.0.0/16",
+				"EnableDnsSupport": "true",
+				"EnableDnsHostnames": "true",
+				"InstanceTenancy": "default",
+				"Tags": [{
+					"Key": "Name",
+					"Value": "LnIk-Vpc-new"
+				}]
+			}
+		},
+		"GatewayToInternet": {
+			"Type": "AWS::EC2::InternetGateway",
+			"Properties": {
+				"Tags": [{
+					"Key": "Name",
+					"Value": "GateWayToInternetLNik"
+				}]
+			}
+		},
+		"AttachGateway": {
+			"Type": "AWS::EC2::VPCGatewayAttachment",
+			"Properties": {
+				"VpcId": {
+					"Ref": "lNikVpc"
+				},
+				"InternetGatewayId": {
+					"Ref": "GatewayToInternet"
+				}
+			}
+		},
+		"PublicSubnet01": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "lNikVpc"
+				},
+				"CidrBlock": "10.0.1.0/24",
+				"AvailabilityZone": "us-west-2a",
+				"Tags": [{
+					"Key": "Name",
+					"Value": "pubsub-lin"
+				}]
+			}
+		},
+		"privateSubnet1": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"VpcId": {
+					"Ref": "lNikVpc"
+				},
+				"CidrBlock": "10.0.2.0/24",
+				"AvailabilityZone": "us-west-2b",
+				"Tags": [{
+					"Key": "Name",
+					"Value": "lin_VPCcf"
+				},
+				{
+					"Key": "Owner",
+					"Value": "Nikhil.l"
+				}]
+			}
+		},
+		"Pubroutetbl": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "lNikVpc"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": "MyInternetPublicRouteTable-lin"
+				}]
+			}
+		},
+		"pubsubnetrouteattach": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "Pubroutetbl"
+				},
+				"SubnetId": {
+					"Ref": "PublicSubnet01"
+				}
+			}
+		},
+		"route1": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"RouteTableId": {
+					"Ref": "Pubroutetbl"
+				},
+				"GatewayId": {
+					"Ref": "GatewayToInternet"
+				}
+			}
+		},
+		"LnikInstancePub": {
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"DisableApiTermination":"false",
+				"InstanceInitiatedShutdownBehavior":"stop",
+				"ImageId": "ami-e689729e",
+				"InstanceType": "t2.micro",
+				"KeyName": "keypair-lin",
+				"Monitoring": "false",
+				"Tags": [{
+					"Key": "Name",
+					"Value": "ec2-ins-lin-new-pub"
+				},
+				{
+					"Key": "Owner",
+					"Value": "nikhil.linga"
+				},
+				{
+					"Key": "Expiration Date",
+					"Value": "2017-10-22"
+				},
+				{
+					"Key": "Project",
+					"Value": "ReanIntern"
+				}],
+				"UserData": {
+					"Fn::Base64": {
+						"Fn::Join": ["",
+						["#!/bin/bash\n",
+						"# Launching Instance",
+                     "sudo yum update -y \n",
+                     "sudo yum install -y httpd \n",
+                     "sudo yum install -y mysql \n",
+                     "sudo yum install -y php \n",
+                     "sudo yum install php70-mbstring.x86_64 php70-zip.x86_64 -y \n",
+                     "sudo service httpd restart \n",
+                     "cd /var/www/html \n",
+                     "wget https://www.phpmyadmin.net/downloads/phpMyAdmin-latest-all-languages.tar.gz \n",
+                     "tar -xvzf phpMyAdmin-latest-all-languages.tar.gz \n",
+                     "mv phpMyAdmin-4.7.4-all-languages phpMyAdmin \n",
+                     "sudo service mysqld start \n"]]
+					}
+				},
+			    
+				"NetworkInterfaces": [{
+					"DeleteOnTermination": "true",
+					"AssociatePublicIpAddress": "true",
+					"Description": "Primary network interface",
+					"DeviceIndex": 0,
+					"SubnetId": {
+						"Ref": "PublicSubnet01"
+					},
+					"PrivateIpAddresses": [{
+						"PrivateIpAddress": "10.0.1.116",
+						"Primary": "true"
+					}],
+					"GroupSet": [{
+						"Ref": "sglaunchwizard2"
+					}]
+				}]
+			}
+		},
+		"sglaunchwizard2": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "sample creation of sglaunchwizard2",
+				"VpcId": {
+					"Ref": "lNikVpc"
+				}
+			}
+		},
+		"ingress1": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Properties": {
+				"GroupId": {
+					"Ref": "sglaunchwizard2"
+				},
+				"IpProtocol": "tcp",
+				"FromPort": "80",
+				"ToPort": "80",
+				"CidrIp": "202.65.158.154/32"
+			}
+		},
+		"ingress2": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Properties": {
+				"GroupId": {
+					"Ref": "sglaunchwizard2"
+				},
+				"IpProtocol": "tcp",
+				"FromPort": "22",
+				"ToPort": "22",
+				"CidrIp": "202.65.158.154/32"
+			}
+		},
+		"egress1": {
+			"Type": "AWS::EC2::SecurityGroupEgress",
+			"Properties": {
+				"GroupId": {
+					"Ref": "sglaunchwizard2"
+				},
+				"IpProtocol": "tcp",
+				"FromPort": "0",
+				"ToPort": "65535",
+				"CidrIp": "0.0.0.0/0"
+			}
+		}
+	}
+}
